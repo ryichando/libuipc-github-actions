@@ -1,0 +1,47 @@
+name: Docker
+
+on:
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: nvidia/cuda:12.6.1-base-ubuntu24.04
+  TMP_CONTAINER_NAME: libuipc
+  TMP_SCRIPT_PATH: /root/libuipc/.github/workflows/libuipc-build.sh
+
+# Follow
+# https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners
+# to setup a self-hosted runner.
+# You need to have both Docker and the Docker Container Tool installed on the host
+
+jobs:
+  build-run:
+    runs-on: my-gpu-runner # replace with your runner name
+    timeout-minutes: 30
+
+    steps:
+      - name: check out repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: load docker
+        run: |
+          docker run -d -t --gpus all --name $TMP_CONTAINER_NAME -e NVIDIA_DRIVER_CAPABILITIES=compute,utility $DOCKER_IMAGE
+          docker cp . $TMP_CONTAINER_NAME:/root/libuipc
+
+      - name: setup
+        run: |
+          docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH setup
+
+      - name: compile
+        run: |
+          docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH compile
+
+      - name: run
+        run: |
+          docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH run
+
+      - name: clean up
+        run: |
+          docker stop $TMP_CONTAINER_NAME
+          docker rm $TMP_CONTAINER_NAME
