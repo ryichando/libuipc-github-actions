@@ -1,3 +1,6 @@
+# File: libuipc-build.sh
+# License: Apache v2.0
+
 ARG=$1
 if [ "$ARG" = "setup" ]; then
 	ln -sf /usr/share/zoneinfo/HongKong /etc/localtime
