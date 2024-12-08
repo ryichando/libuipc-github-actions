@@ -1,3 +1,6 @@
+# File: docker.yml
+# License: Apache v2.0
+
 name: Docker
 
 on:
@@ -42,6 +45,7 @@ jobs:
           docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH run
 
       - name: clean up
+        if: always()
         run: |
           docker stop $TMP_CONTAINER_NAME
           docker rm $TMP_CONTAINER_NAME
