@@ -26,7 +26,7 @@ elif [ "$ARG" = "compile" ]; then
     git config --global --add safe.directory $HOME/libuipc
 	mkdir ~/build
 	cd ~/build
-	cmake -S ../libuipc -DUIPC_BUILD_GUI=0 -DCMAKE_BUILD_TYPE=Release
+	cmake -S ../libuipc-github-actions -DUIPC_BUILD_GUI=0 -DCMAKE_BUILD_TYPE=Release
 	cmake --build . -j$(nproc)
 elif [ "$ARG" = "run" ]; then
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/build/Release/bin
