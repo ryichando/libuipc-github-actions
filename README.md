@@ -1,79 +1,25 @@
-# libuipc [![Docker](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml/badge.svg)](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml)
-A Cross-Platform Modern C++20 **Lib**rary of **U**nified **I**ncremental **P**otential **C**ontact.
+## ⚙️ GitHub Actions for libuipc
 
-Both C++ and Python API are provided!
+[![Docker](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml/badge.svg)](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml)
 
-Website: ➡️ https://spirimirror.github.io/libuipc-doc/
+This fork provides fully automated GitHub Action functionality for libuipc (https://github.com/spiriMirror/libuipc), delivering the following benefits:
 
-![teaser](docs/media/teaser.png)
+### 🔧 Reliability in Build
 
-## Introduction
+GitHub Actions offer high reliability and transparency during the compilation process. You do not need to carefully read through documentation to figure out which specific libraries need to be installed during the installation process.
 
-**Libuipc** is a library that offers a unified **GPU** incremental potential contact framework for simulating the dynamics of rigid bodies, soft bodies, cloth, and threads, and their couplings. It ensures accurate, **penetration-free frictional contact** and is naturally **differentiable**. Libuipc aims to provide robust and efficient **forward** and **backward** simulations, making it easy for users to integrate with machine learning frameworks, inverse dynamics, robotics, and more.
+### 🐳 Docker Sealed
+The original libuipc recommends installing libraries with specific versions using `conda`. However, using `conda` can conflict with `pip` if not managed carefully. Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
 
-We are **actively** developing Libuipc and will continue to add more features and improve its performance. We welcome any feedback and contributions from the community!
+### 🚀 Simplified Installation Process
+Our GitHub Actions rely on `.github/workflows/libuipc-build.sh` to install dependencies without any user intervention. More specifically, installation, compilation, and running an example can be done by simply executing the following commands:
 
-## Why Libuipc
-
-- **Easy & Powerful**: Libuipc offers an intuitive and unified approach to creating and accessing vivid simulation scenes, supporting a variety of objects and constraints that can be easily added.
-- **Fast & Robust**: Libuipc is designed to run fully in parallel on the GPU, achieving high performance and enabling large-scale simulations. It features a robust and accurate frictional contact model that effectively handles complex frictional scenarios without penetration.
-- **High Flexibility**: Libuipc provides APIs in both Python and C++ and supports both Linux and Windows systems.
-- **Fully Differentiable**: Libuipc provides differentiable simulation APIs for backward optimizations. (Coming Soon)
-
-<table>
-  <tr>
-    <td>
-      <img src="docs/tutorial/media/concepts_code.svg" width="400">
-    </td>
-    <td>
-      <img src="docs/tutorial/media/concepts.drawio.svg" width="450">
-    </td>
-  </tr>
-</table>
-
-
-## Key Features
-
-- Finite Element-Based Deformable Simulation
-- Rigid & Soft Body Strong Coupling Simulation
-- Penetration-Free & Accurate Frictional Contact Handling
-- User Scriptable Animation Control
-- Fully Differentiable Simulation (Diff-Sim Coming Soon)
-
-## News
-
-**2024-11-25**: Libuipc v0.9.0 (Alpha) is published! We are excited to share our work with the community. This is a preview version, if you have any feedback or suggestions, please feel free to contact us! [Issues](https://github.com/spiriMirror/libuipc/issues) and [PRs](https://github.com/spiriMirror/libuipc/pulls) are welcome!
-
-## Citation
-
-If you use **Libuipc** in your project, please cite our works:
-
-```
-@misc{huang2024advancinggpuipcstiff,
-      title={Advancing GPU IPC for stiff affine-deformable simulation}, 
-      author={Kemeng Huang and Xinyu Lu and Huancheng Lin and Taku Komura and Minchen Li},
-      year={2024},
-      eprint={2411.06224},
-      archivePrefix={arXiv},
-      primaryClass={cs.GR},
-      url={https://arxiv.org/abs/2411.06224}, 
-}
+```bash
+SCRIPT_PATH=$HOME/libuipc/.github/workflows/libuipc-build.sh
+bash $SCRIPT_PATH setup    # Install dependencies
+bash $SCRIPT_PATH compile  # Compile the library
+bash $SCRIPT_PATH run      # Run a test example
 ```
 
-```
-@article{gipc2024,
-      author = {Huang, Kemeng and Chitalu, Floyd M. and Lin, Huancheng and Komura, Taku},
-      title = {GIPC: Fast and Stable Gauss-Newton Optimization of IPC Barrier Energy},
-      year = {2024},
-      publisher = {Association for Computing Machinery},
-      volume = {43},
-      number = {2},
-      issn = {0730-0301},
-      doi = {10.1145/3643028},
-      journal = {ACM Trans. Graph.},
-      month = {mar},
-      articleno = {23},
-      numpages = {18}
-}
-```
-
+### 🧹 Simplified Cleanup
+Since everything is contained within the Docker environment, any traces left over from the installation process can be easily cleaned up.
