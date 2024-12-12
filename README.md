@@ -13,9 +13,10 @@ In contrast, GitHub Actions offer high reliability and transparency during the c
 ### 🐳 Docker Sealed
 
 The original libuipc recommends installing specific versions of GCC compilers and the NVIDIA CUDA toolkit using `conda`.
-However, using `conda` can break more widely used `pip` if not managed carefully.
+However, using `conda` can interfere with the more widely used `pip` if not managed carefully.
 See [this article for example](https://www.anaconda.com/blog/using-pip-in-a-conda-environment).
-Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
+Once both `conda` and `pip` are installed together, an accidental package installation can break your environment.
+Encapsulating everything within a Docker container ensures greater security and better maintainability in this regard.
 Here's how to run in a Docker container.
 You need to install both Docker and the Docker Container Toolkit.
 
@@ -62,7 +63,10 @@ All you need to do is create a template with `nvidia/cuda:12.4.0-base-ubuntu22.0
 ```bash
 cd $HOME
 
+# clone repository
 git clone https://github.com/ryichando/libuipc-github-actions.git
+
+# set variable
 SCRIPT_PATH=$HOME/libuipc-github-actions/.github/workflows/libuipc-build.sh
 
 bash $SCRIPT_PATH $HOME setup   # Install dependencies
