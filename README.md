@@ -16,10 +16,12 @@ However, using `conda` can conflict with `pip` if not managed carefully. Encapsu
 Our GitHub Actions rely on `.github/workflows/libuipc-build.sh` to install dependencies without any user intervention. More specifically, installation, compilation, and running an example can be done by simply executing the following commands:
 
 ```bash
+cd $HOME
+git clone https://github.com/ryichando/libuipc-github-actions.git
 SCRIPT_PATH=$HOME/libuipc-github-actions/.github/workflows/libuipc-build.sh
-bash $SCRIPT_PATH setup    # Install dependencies
-bash $SCRIPT_PATH compile  # Compile the library
-bash $SCRIPT_PATH run      # Run a test example
+bash $SCRIPT_PATH $HOME setup   # Install dependencies
+bash $SCRIPT_PATH $HOME compile # Compile the library
+bash $SCRIPT_PATH $HOME run     # Run a test example
 ```
 
 ### 🧹 Simplified Cleanup
