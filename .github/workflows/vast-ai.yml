@@ -1,0 +1,45 @@
+# File: vast-ai.yml
+# License: Apache v2.0
+
+name: vast-ai
+
+on:
+  workflow_dispatch:
+
+env:
+  TMP_SCRIPT_PATH: /root/libuipc-github-actions/.github/workflows/libuipc-build.sh
+
+# Follow
+# https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners
+# to setup a self-hosted runner.
+#
+# Set this before running config.py
+# export RUNNER_ALLOW_RUNASROOT="1"
+#
+# On the vast-ai side, you will need to create a template with
+# Image Tag/Path: nvidia/cuda:12.4.0-base-ubuntu22.04
+# Also, make sure to check "Run interactive shell server, SSH" and "Use direct SSH connection"
+
+jobs:
+  build-run:
+    runs-on: my-vast-ai-runner # replace with your runner name
+    timeout-minutes: 30
+
+    steps:
+      - name: check out repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          path: /root/libuipc-github-actions
+
+      - name: setup
+        run: |
+          bash $TMP_SCRIPT_PATH setup
+
+      - name: compile
+        run: |
+          bash $TMP_SCRIPT_PATH compile
+
+      - name: run
+        run: |
+          bash $TMP_SCRIPT_PATH run
