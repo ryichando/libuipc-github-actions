@@ -13,7 +13,9 @@ In contrast, GitHub Actions offer high reliability and transparency during the c
 ### 🐳 Docker Sealed
 
 The original libuipc recommends installing specific versions of GCC compilers and the NVIDIA CUDA toolkit using `conda`.
-However, using `conda` can break more widely used `pip` if not managed carefully. Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
+However, using `conda` can break more widely used `pip` if not managed carefully.
+See [this article for example](https://www.anaconda.com/blog/using-pip-in-a-conda-environment).
+Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
 Here's how to run in a Docker container.
 You need to install both Docker and the Docker Container Toolkit.
 
