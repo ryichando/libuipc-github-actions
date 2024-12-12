@@ -22,6 +22,7 @@ if [ "$ARG" = "setup" ]; then
 	./bootstrap-vcpkg.sh
 
 elif [ "$ARG" = "compile" ]; then
+	git config --global --add safe.directory $WORKSPACE/libuipc-github-actions
 	source $WORKSPACE/miniconda3/bin/activate ""
     export CMAKE_TOOLCHAIN_FILE=$WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake
 	mkdir $WORKSPACE/build
