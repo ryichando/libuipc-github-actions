@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  TMP_SCRIPT_PATH: /root/libuipc-github-actions/.github/workflows/libuipc-build.sh
+  TMP_SCRIPT_PATH: ${{ github.workspace }}/libuipc-github-actions/.github/workflows/libuipc-build.sh
 
 # Follow
 # https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners
