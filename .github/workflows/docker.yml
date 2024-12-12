@@ -30,7 +30,7 @@ jobs:
       - name: load docker
         run: |
           docker run -d -t --gpus all --name $TMP_CONTAINER_NAME -e NVIDIA_DRIVER_CAPABILITIES=compute,utility $DOCKER_IMAGE
-          docker cp . $TMP_CONTAINER_NAME:/root/libuipc
+          docker cp . $TMP_CONTAINER_NAME:/root/libuipc-github-actions
 
       - name: setup
         run: |
