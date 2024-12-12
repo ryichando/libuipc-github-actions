@@ -34,15 +34,15 @@ jobs:
 
       - name: setup
         run: |
-          docker exec $TMP_CONTAINER_NAME bash /root $TMP_SCRIPT_PATH setup
+          docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH /root setup
 
       - name: compile
         run: |
-          docker exec $TMP_CONTAINER_NAME bash /root $TMP_SCRIPT_PATH compile
+          docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH /root compile
 
       - name: run
         run: |
-          docker exec $TMP_CONTAINER_NAME bash /root $TMP_SCRIPT_PATH run
+          docker exec $TMP_CONTAINER_NAME bash $TMP_SCRIPT_PATH /root run
 
       - name: clean up
         if: always()
