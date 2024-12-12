@@ -19,6 +19,7 @@ env:
 # On the vast-ai side, you will need to create a template with
 # Image Tag/Path: nvidia/cuda:12.4.0-base-ubuntu22.04
 # Also, make sure to check "Run interactive shell server, SSH" and "Use direct SSH connection"
+# Please ensure to select an instance with CUDA version 12.4 or higher.
 
 jobs:
   build-run:

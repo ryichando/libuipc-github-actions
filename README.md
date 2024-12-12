@@ -2,16 +2,18 @@
 
 [![Docker](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml/badge.svg)](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml) [![vast-ai](https://github.com/ryichando/libuipc-github-actions/actions/workflows/vast-ai.yml/badge.svg)](https://github.com/ryichando/libuipc-github-actions/actions/workflows/vast-ai.yml)
 
-This fork provides fully automated GitHub Action functionality for libuipc (https://github.com/spiriMirror/libuipc), delivering the following benefits:
+This fork provides fully automated GitHub Action functionality for libuipc (https://github.com/spiriMirror/libuipc), delivering the following benefits listed below.
 
 ### 🔧 Reliability in Build
 
-Despite most packages being automatically installed via `vcpkg`, some libraries still need to be manually installed. In contrast, GitHub Actions offer high reliability and transparency during the compilation process without any user intervention, so you do not need to carefully read through documentation to figure out which specific libraries need to be installed.
+Despite most packages being automatically installed via `vcpkg`, some libraries still need to be manually installed.
+Some variables such as `CMAKE_TOOLCHAIN_FILE` also needs to be manually set.
+In contrast, GitHub Actions offer high reliability and transparency during the compilation process without any user intervention.
 
 ### 🐳 Docker Sealed
 
 The original libuipc recommends installing specific versions of GCC compilers and the NVIDIA CUDA toolkit using `conda`.
-However, using `conda` can conflict with `pip` if not managed carefully. Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
+However, using `conda` can conflict with the more widely used `pip` if not managed carefully. Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
 Here's how to run in a Docker container.
 You need to install both Docker and the Docker Container Toolkit.
 
@@ -47,7 +49,13 @@ docker rm $TMP_CONTAINER_NAME
 
 ### ☁️ [vast.ai](https://vast.ai) Support
 
-Our GitHub Actions also support [vast.ai](https://vast.ai) instances. All you need to do is create a template with `nvidia/cuda:12.4.0-base-ubuntu22.04`, provision an instance, and run
+Our GitHub Actions also support [vast.ai](https://vast.ai) instances.
+
+> [!NOTE]
+> The [libuipc documentation](https://spirimirror.github.io/libuipc-doc/build/) states that the minimum required CUDA version is 12.0, but it also specifies that conda installs version 12.4. Therefore, you need to select an instance that supports at least CUDA 12.4 or later.
+> Our experience shows that selecting instances with older versions results in runtime errors.
+
+All you need to do is create a template with `nvidia/cuda:12.4.0-base-ubuntu22.04`, provision an instance, and run
 
 ```bash
 cd $HOME
