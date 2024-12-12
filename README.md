@@ -2,7 +2,7 @@
 
 [![Docker](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml/badge.svg)](https://github.com/ryichando/libuipc-github-actions/actions/workflows/docker.yml) [![vast-ai](https://github.com/ryichando/libuipc-github-actions/actions/workflows/vast-ai.yml/badge.svg)](https://github.com/ryichando/libuipc-github-actions/actions/workflows/vast-ai.yml)
 
-This fork provides fully automated GitHub Action functionality for libuipc (https://github.com/spiriMirror/libuipc), delivering the following benefits listed below.
+This fork provides fully automated GitHub Action functionality for libuipc (https://github.com/spiriMirror/libuipc), delivering following benefits listed below.
 
 ### 🔧 Reliability in Build
 
@@ -13,7 +13,7 @@ In contrast, GitHub Actions offer high reliability and transparency during the c
 ### 🐳 Docker Sealed
 
 The original libuipc recommends installing specific versions of GCC compilers and the NVIDIA CUDA toolkit using `conda`.
-However, using `conda` can conflict with the more widely used `pip` if not managed carefully. Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
+However, using `conda` can break more widely used `pip` if not managed carefully. Encapsulating everything within a Docker container ensures excellent maintainability in this regard.
 Here's how to run in a Docker container.
 You need to install both Docker and the Docker Container Toolkit.
 
