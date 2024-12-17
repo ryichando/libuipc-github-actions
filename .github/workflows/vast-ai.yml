@@ -33,6 +33,9 @@ jobs:
           submodules: recursive
           path: ${{ github.workspace }}/libuipc-github-actions
 
+      - name: print info
+        run: bash .github/workflows/print-info.sh
+
       - name: setup
         run: |
           bash $TMP_SCRIPT_PATH ${{ github.workspace }} setup

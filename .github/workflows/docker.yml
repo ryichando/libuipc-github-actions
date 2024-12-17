@@ -27,6 +27,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: print info
+        run: bash .github/workflows/print-info.sh
+
       - name: load docker
         run: |
           docker run -d -t --gpus all --name $TMP_CONTAINER_NAME -e NVIDIA_DRIVER_CAPABILITIES=compute,utility $DOCKER_IMAGE
