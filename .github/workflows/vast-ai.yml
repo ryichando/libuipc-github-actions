@@ -8,6 +8,7 @@ on:
 
 env:
   TMP_SCRIPT_PATH: ${{ github.workspace }}/libuipc-github-actions/.github/workflows/libuipc-build.sh
+  TMP_PRINT_INFO_PATH: ${{ github.workspace }}/libuipc-github-actions/.github/workflows/print-info.sh
 
 # Follow
 # https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners
@@ -34,7 +35,7 @@ jobs:
           path: ${{ github.workspace }}/libuipc-github-actions
 
       - name: print info
-        run: bash .github/workflows/print-info.sh
+        run: bash $TMP_PRINT_INFO_PATH
 
       - name: setup
         run: |
