@@ -10,7 +10,7 @@ env:
   DOCKER_IMAGE: nvidia/cuda:12.4.0-base-ubuntu22.04
   TMP_CONTAINER_NAME: libuipc
   TMP_SCRIPT_PATH: /root/libuipc-github-actions/.github/workflows/libuipc-build.sh
-  TMP_PRINT_INFO_PATH: /root/libuipc-github-actions/.github/workflows/print-info.sh
+  TMP_PRINT_INFO_PATH: ${{ github.workspace }}/libuipc-github-actions/.github/workflows/print-info.sh
 
 # Follow
 # https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners
@@ -28,13 +28,13 @@ jobs:
         with:
           submodules: recursive
 
-      - name: print info
-        run: bash $TMP_PRINT_INFO_PATH
-
       - name: load docker
         run: |
           docker run -d -t --gpus all --name $TMP_CONTAINER_NAME -e NVIDIA_DRIVER_CAPABILITIES=compute,utility $DOCKER_IMAGE
           docker cp . $TMP_CONTAINER_NAME:/root/libuipc-github-actions
+
+      - name: print info
+        run: bash $TMP_PRINT_INFO_PATH
 
       - name: setup
         run: |
