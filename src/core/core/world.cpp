@@ -149,6 +149,11 @@ bool World::recover(SizeT aim_frame)
     return success && !has_error;
 }
 
+bool World::is_valid() const
+{
+    return m_valid;
+}
+
 SizeT World::frame() const
 {
     if(!m_valid)
@@ -160,85 +165,18 @@ SizeT World::frame() const
 }
 
 
-static S<dylib> load_sanity_check_module()
-{
-    static std::mutex m_cache_mutex;
-    static S<dylib>   m_cache;
-
-    std::lock_guard lock{m_cache_mutex};
-
-    if(m_cache)
-        return m_cache;
-
-    // if not found, load it
-    auto& uipc_config = uipc::config();
-    auto  this_module =
-        uipc::make_shared<dylib>(uipc_config["module_dir"].get<std::string>(),
-                                 "uipc_sanity_check");
-
-    std::string_view module_name = "sanity_check";
-
-    UIPCModuleInitInfo info;
-    info.module_name     = "sanity_check";
-    info.memory_resource = std::pmr::get_default_resource();
-
-    auto init = this_module->get_function<void(UIPCModuleInitInfo*)>("uipc_init_module");
-    if(!init)
-        throw Exception{fmt::format("Can't find [sanity_check]'s module initializer.")};
-
-    init(&info);
-
-    m_cache = this_module;
-    return m_cache;
-}
-
 void World::sanity_check(Scene& s)
 {
     if(s.info()["sanity_check"]["enable"] == true)
     {
-        auto sanity_check_module = load_sanity_check_module();
-        auto creator =
-            sanity_check_module->get_function<ISanityCheckerCollection*(SanityCheckerCollectionCreateInfo*)>(
-                "uipc_create_sanity_checker_collection");
+        auto result = s.sanity_checker().check(m_engine->workspace());
 
-        if(!creator)
+        if(result != SanityCheckResult::Success)
         {
-            spdlog::error("Can't find [sanity_check]'s sanity checker creator, so we skip sanity check.");
-            return;
+            s.sanity_checker().report();
         }
 
-        auto destroyer =
-            sanity_check_module->get_function<void(ISanityCheckerCollection*)>(
-                "uipc_destroy_sanity_checker_collection");
-
-        if(!destroyer)
-        {
-            spdlog::error("Can't find [sanity_check]'s sanity checker destroyer, so we skip sanity check.");
-            return;
-        }
-
-        SanityCheckerCollectionCreateInfo info;
-        info.workspace = m_engine->workspace();
-
-        ISanityCheckerCollection* sanity_checkers = creator(&info);
-        sanity_checkers->init(s);
-
-        auto result = sanity_checkers->check();
-        switch(result)
-        {
-            case SanityCheckResult::Success:
-                spdlog::info("Scene sanity check passed.");
-                break;
-            case SanityCheckResult::Warning:
-                spdlog::warn("Scene sanity check passed with warnings.");
-                break;
-            case SanityCheckResult::Error:
-                spdlog::error("Scene sanity check failed, we invalidate World.");
-                m_valid = false;
-                break;
-            default:
-                break;
-        }
+        m_valid = (result == SanityCheckResult::Success);
     }
 }
 }  // namespace uipc::core

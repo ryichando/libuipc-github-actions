@@ -1,3 +1,4 @@
+#include "uipc/common/log.h"
 #include <context.h>
 #include <uipc/common/zip.h>
 #include <uipc/backend/visitors/geometry_visitor.h>
@@ -8,9 +9,59 @@
 #include <uipc/geometry/utils/extract_surface.h>
 #include <uipc/geometry/utils/apply_transform.h>
 #include <uipc/geometry/utils/merge.h>
+#include <uipc/common/zip.h>
 
 namespace uipc::sanity_check
 {
+void ContactTabular::init(backend::SceneVisitor& scene)
+{
+    auto contact_models = scene.contact_tabular().contact_models();
+    auto elements       = scene.contact_tabular().element_count();
+
+    auto attr_topo          = contact_models.find<Vector2i>("topo");
+    auto attr_resistance    = contact_models.find<Float>("resistance");
+    auto attr_friction_rate = contact_models.find<Float>("friction_rate");
+    auto attr_enabled       = contact_models.find<IndexT>("is_enabled");
+
+    UIPC_ASSERT(attr_topo != nullptr, "topo is not found in contact tabular");
+    UIPC_ASSERT(attr_resistance != nullptr, "resistance is not found in contact tabular");
+    UIPC_ASSERT(attr_friction_rate != nullptr, "friction_rate is not found in contact tabular");
+    UIPC_ASSERT(attr_enabled != nullptr, "is_enabled is not found in contact tabular");
+
+    auto topo_view          = attr_topo->view();
+    auto resistance_view    = attr_resistance->view();
+    auto friction_rate_view = attr_friction_rate->view();
+    auto enabled_view       = attr_enabled->view();
+
+    auto default_model = scene.contact_tabular().default_model();
+
+    m_table.resize(elements * elements, default_model);
+    m_contact_element_count = elements;
+    for(auto&& [topo, resistance, friction_rate, enabled] :
+        zip(topo_view, resistance_view, friction_rate_view, enabled_view))
+    {
+        m_table[topo.x() * elements + topo.y()] = core::ContactModel{
+            topo, friction_rate, resistance, enabled ? true : false, Json::object()};
+    }
+}
+
+const core::ContactModel& ContactTabular::at(IndexT i, IndexT j) const
+{
+    UIPC_ASSERT(i < m_contact_element_count && j < m_contact_element_count,
+                "Invalid contact element id, id should be in [{},{}), your i={}, j={}.",
+                0,
+                m_contact_element_count,
+                i,
+                j);
+
+    return m_table[i * m_contact_element_count + j];
+}
+
+SizeT ContactTabular::element_count() const noexcept
+{
+    return m_contact_element_count;
+}
+
 namespace detail
 {
     using namespace uipc::geometry;
@@ -66,19 +117,20 @@ namespace detail
     static void create_basic_sanity_check_attributes(span<S<GeometrySlot>> geos,
                                                      const unordered_map<IndexT, IndexT>& geo_id_to_object_id)
     {
-        for(auto& geo : geos)
+        for(auto& geo_slot : geos)
         {
-            if(geo->geometry().type() == builtin::SimplicialComplex)
+            auto& geo = geo_slot->geometry();
+
+            if(geo.type() == builtin::SimplicialComplex)
             {
-                auto simplicial_complex =
-                    dynamic_cast<SimplicialComplex*>(&geo->geometry());
+                auto simplicial_complex = geo.as<SimplicialComplex>();
 
                 UIPC_ASSERT(simplicial_complex, "type mismatch, why can it happen?");
 
                 // 1) label original_index for each vertex, edge, triangle, tetrahedron
                 {
                     auto OI = simplicial_complex->vertices().create<IndexT>(
-                        "sanity_check/original_index");
+                        "sanity_check/original_index", -1);
                     auto OI_view = view(*OI);
 
                     std::iota(OI_view.begin(), OI_view.end(), 0);
@@ -86,7 +138,8 @@ namespace detail
 
                 if(simplicial_complex->dim() >= 1)
                 {
-                    auto OI = simplicial_complex->edges().create<IndexT>("sanity_check/original_index");
+                    auto OI = simplicial_complex->edges().create<IndexT>(
+                        "sanity_check/original_index", -1);
                     auto OI_view = view(*OI);
 
                     std::iota(OI_view.begin(), OI_view.end(), 0);
@@ -95,7 +148,7 @@ namespace detail
                 if(simplicial_complex->dim() >= 2)
                 {
                     auto OI = simplicial_complex->triangles().create<IndexT>(
-                        "sanity_check/original_index");
+                        "sanity_check/original_index", -1);
                     auto OI_view = view(*OI);
 
                     std::iota(OI_view.begin(), OI_view.end(), 0);
@@ -104,7 +157,7 @@ namespace detail
                 if(simplicial_complex->dim() == 3)
                 {
                     auto OI = simplicial_complex->tetrahedra().create<IndexT>(
-                        "sanity_check/original_index");
+                        "sanity_check/original_index", -1);
                     auto OI_view = view(*OI);
 
                     std::iota(OI_view.begin(), OI_view.end(), 0);
@@ -118,20 +171,48 @@ namespace detail
                         geo_id = simplicial_complex->vertices().create<IndexT>(
                             "sanity_check/geometry_id");
 
-                    std::ranges::fill(view(*geo_id), geo->id());
+                    std::ranges::fill(view(*geo_id), geo_slot->id());
 
                     auto obj_id = simplicial_complex->vertices().find<IndexT>("sanity_check/object_id");
 
                     if(!obj_id)
-                        obj_id = simplicial_complex->vertices().create<IndexT>("sanity_check/object_id");
+                        obj_id = simplicial_complex->vertices().create<IndexT>(
+                            "sanity_check/object_id", -1);
 
-                    std::ranges::fill(view(*obj_id), geo_id_to_object_id.at(geo->id()));
+                    std::ranges::fill(view(*obj_id),
+                                      geo_id_to_object_id.at(geo_slot->id()));
                 }
+
+                // 3) label vertices with dimension
+                {
+                    auto dim = simplicial_complex->dim();
+                    auto dim_attr = simplicial_complex->vertices().find<IndexT>("sanity_check/dim");
+                    if(!dim_attr)
+                        dim_attr = simplicial_complex->vertices().create<IndexT>(
+                            "sanity_check/dim", -1);
+
+                    std::ranges::fill(view(*dim_attr), dim);
+                }
+            }
+
+            if(geo.type() == builtin::ImplicitGeometry)
+            {
+                auto geo_id = geo.instances().find<IndexT>("sanity_check/geometry_id");
+                if(!geo_id)
+                    geo_id = geo.instances().create<IndexT>("sanity_check/geometry_id");
+
+                std::ranges::fill(view(*geo_id), geo_slot->id());
+
+                auto obj_id = geo.instances().find<IndexT>("sanity_check/object_id");
+                if(!obj_id)
+                    obj_id = geo.instances().create<IndexT>("sanity_check/object_id");
+
+                std::ranges::fill(view(*obj_id), geo_id_to_object_id.at(geo_slot->id()));
             }
         }
     }
 
-    static void label_vertices_with_contact_element_id(span<S<GeometrySlot>> geos)
+    static void label_vertices_with_contact_info(span<S<GeometrySlot>> geos)
     {
         for(auto& geo : geos)
         {
@@ -141,22 +222,36 @@ namespace detail
                     dynamic_cast<SimplicialComplex*>(&geo->geometry());
                 UIPC_ASSERT(simplicial_complex, "type mismatch, why can it happen?");
 
+                // 1) Contact Element ID
                 auto contact_element_id =
                     simplicial_complex->meta().find<IndexT>(builtin::contact_element_id);
+                auto v_is_surf =
+                    simplicial_complex->vertices().find<IndexT>(builtin::is_surf);
 
-                IndexT CID = 0;
+                IndexT CID        = 0;
+                bool   need_label = false;
+
+                if(v_is_surf && !contact_element_id)
+                    need_label = true;
 
                 if(contact_element_id)
-                    CID = contact_element_id->view()[0];
+                {
+                    CID        = contact_element_id->view()[0];
+                    need_label = true;
+                }
 
-                auto vertex_contact_element_id =
-                    simplicial_complex->vertices().find<IndexT>("sanity_check/contact_element_id");
+                if(need_label)
+                {
+                    auto vertex_contact_element_id =
+                        simplicial_complex->vertices().find<IndexT>("sanity_check/contact_element_id");
 
-                if(!vertex_contact_element_id)
-                    vertex_contact_element_id =
-                        simplicial_complex->vertices().create<IndexT>("sanity_check/contact_element_id");
+                    if(!vertex_contact_element_id)
+                        vertex_contact_element_id =
+                            simplicial_complex->vertices().create<IndexT>(
+                                "sanity_check/contact_element_id", 0);
 
-                std::ranges::fill(view(*vertex_contact_element_id), CID);
+                    std::ranges::fill(view(*vertex_contact_element_id), CID);
+                }
             }
         }
     }
@@ -274,11 +369,13 @@ class Context::Impl
 
     ~Impl() = default;
 
-    void init()
+    void prepare()
     {
+        auto scene_visitor = backend::SceneVisitor{m_scene};
+        m_contact_tabular.init(scene_visitor);
+
         build_geo_id_to_object_id();
 
-        auto scene_visitor = backend::SceneVisitor{m_scene};
         detail::create_basic_sanity_check_attributes(scene_visitor.geometries(),
                                                      m_geo_id_to_object_id);
 
@@ -286,11 +383,11 @@ class Context::Impl
         auto  enable_contact = info["contact"]["enable"].get<bool>();
         if(enable_contact)
         {
-            detail::label_vertices_with_contact_element_id(scene_visitor.geometries());
+            detail::label_vertices_with_contact_info(scene_visitor.geometries());
         }
     }
 
-    void deinit()
+    void destroy()
     {
         auto scene_visitor = backend::SceneVisitor{m_scene};
         detail::destory_sanity_check_attributes(scene_visitor);
@@ -340,17 +437,38 @@ class Context::Impl
         return *m_scene_simplicial_surface;
     }
 
+    void init_contact_tabular(ContactTabular& contact_tabular) const
+    {
+        auto scene_visitor = backend::SceneVisitor{m_scene};
+        contact_tabular.init(scene_visitor);
+    }
+
+    const ContactTabular& contact_tabular() const noexcept
+    {
+        return m_contact_tabular;
+    }
 
   private:
     core::Scene&                           m_scene;
     mutable U<geometry::SimplicialComplex> m_scene_simplicial_surface;
     mutable unordered_map<IndexT, IndexT>  m_geo_id_to_object_id;
+    ContactTabular                         m_contact_tabular;
 };
 
 Context::Context(SanityCheckerCollection& c, core::Scene& s) noexcept
     : SanityChecker(c, s)
     , m_impl(uipc::make_unique<Impl>(s))
 {
+}
+
+void Context::prepare()
+{
+    m_impl->prepare();
+}
+
+void Context::destroy()
+{
+    m_impl->destroy();
 }
 
 Context::~Context() {}
@@ -360,21 +478,17 @@ const geometry::SimplicialComplex& Context::scene_simplicial_surface() const noe
     return m_impl->scene_simplicial_surface();
 }
 
-void Context::init() noexcept
+const ContactTabular& Context::contact_tabular() const noexcept
 {
-    m_impl->init();
-}
-
-void Context::deinit() noexcept
-{
-    m_impl->deinit();
+    return m_impl->contact_tabular();
 }
 
 U64 Context::get_id() const noexcept
 {
     return 0;
 }
-SanityCheckResult Context::do_check(backend::SceneVisitor&) noexcept
+
+SanityCheckResult Context::do_check(backend::SceneVisitor&, backend::SanityCheckMessageVisitor&)
 {
     // Do nothing, this checker is only for providing context for other checkers
     return SanityCheckResult::Success;

@@ -11,6 +11,7 @@ class Scene::Impl
     Impl(Scene& scene, const Json& config) noexcept
         : scene(scene)
         , animator(scene)
+        , sanity_checker(scene)
     {
         info = config;
     }
@@ -23,16 +24,12 @@ class Scene::Impl
 
         dt = info["dt"].get<Float>();
 
-        spdlog::info("Scene Init: Collecting Constitution UIDs ...");
         constitution_tabular.init(visitor);
 
         if(info["diff_sim"]["enable"].get<bool>())
         {
-            spdlog::info("Scene Init: Initializing Differentiable Simulation Parameters ...");
             diff_sim.init(visitor);
         }
-
-        diff_sim.init(visitor);
 
         started = true;
     }
@@ -57,6 +54,7 @@ class Scene::Impl
 
     geometry::GeometryCollection geometries;
     geometry::GeometryCollection rest_geometries;
+    SanityChecker                sanity_checker;
 
     bool   started = false;
     Scene& scene;
@@ -116,7 +114,14 @@ Json Scene::default_config() noexcept
         collision_detection["method"] = "linear_bvh";
     }
 
-    config["sanity_check"]["enable"] = true;
+    auto& sanity_check = config["sanity_check"];
+    {
+        sanity_check["enable"] = true;
+
+        // normal: automatically export mesh to workspace
+        // quiet: do not export mesh
+        sanity_check["mode"] = "normal";
+    }
 
     auto& recovery = config["recovery"] = Json::object();
     {
@@ -207,6 +212,16 @@ DiffSim& Scene::diff_sim()
 const DiffSim& Scene::diff_sim() const
 {
     return m_impl->diff_sim;
+}
+
+SanityChecker& Scene::sanity_checker()
+{
+    return m_impl->sanity_checker;
+}
+
+const SanityChecker& Scene::sanity_checker() const
+{
+    return m_impl->sanity_checker;
 }
 
 void Scene::init(backend::WorldVisitor& world)

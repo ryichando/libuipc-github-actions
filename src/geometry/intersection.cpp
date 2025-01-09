@@ -1,5 +1,6 @@
 #include <uipc/geometry/utils/intersection.h>
 #include <Eigen/Dense>
+#include <igl/segment_segment_intersect.h>
 
 namespace uipc::geometry
 {
@@ -8,9 +9,12 @@ bool tri_edge_intersect(const Vector3& triVA,
                         const Vector3& triVC,
                         const Vector3& edgeVE,
                         const Vector3& edgeVF,
+                        bool&          coplanar,
                         Vector3&       uvw_in_tri,
                         Vector2&       uv_in_edge)
 {
+    coplanar = false;
+
     Eigen ::Vector3d EF = edgeVF - edgeVE;
     Vector3          AB = triVB - triVA;
     Vector3          AC = triVC - triVA;
@@ -26,9 +30,28 @@ bool tri_edge_intersect(const Vector3& triVA,
     M.col(1) = AB;
     M.col(2) = AC;
 
-    if(M.determinant() == 0)
+    if(std::abs(M.determinant()) <= 1e-6)  // coplanar or parallel
     {
-        return false;
+        // check if E is in the plane of the triangle
+        Eigen::Vector3d N       = AB.cross(AC);
+        auto            AE_on_N = N.dot(AE);
+        if(AE_on_N != 0)  // parallel
+            return false;
+
+        Vector3 BC = triVC - triVB;
+
+        coplanar = true;
+
+        Vector2 tu;
+        bool    intersect = false;
+        intersect |=
+            igl::segment_segment_intersect(edgeVE, EF, triVA, AB, tu[0], tu[1]);
+        intersect |=
+            igl::segment_segment_intersect(edgeVE, EF, triVA, AC, tu[0], tu[1]);
+        intersect |=
+            igl::segment_segment_intersect(edgeVE, EF, triVB, BC, tu[0], tu[1]);
+
+        return intersect;
     }
 
     Vector3 tuv = M.inverse() * AE;
@@ -40,10 +63,10 @@ bool tri_edge_intersect(const Vector3& triVA,
     uvw_in_tri[1] = tuv[1];
     uvw_in_tri[2] = tuv[2];
 
-    uv_in_edge[0] = tuv[0];
-    uv_in_edge[1] = 1.0 - tuv[0];
+    uv_in_edge[0] = 1.0 - tuv[0];
+    uv_in_edge[1] = tuv[0];
 
-    auto in_01 = [](double x) { return x > 0 && x < 1; };
+    auto in_01 = [](double x) { return x >= 0 && x <= 1; };
 
     bool in_tri = in_01(uvw_in_tri[0]) && in_01(uvw_in_tri[1]) && in_01(uvw_in_tri[2]);
 
@@ -81,7 +104,7 @@ bool is_point_in_tet(const Vector3& tetVA,
 
     Vector3 uvw = M.inverse() * AP;
 
-    auto in_01 = [](double x) { return x > 0 && x < 1; };
+    auto in_01 = [](double x) { return x >= 0 && x <= 1; };
 
     tuvw_in_tet[0] = 1.0 - uvw[0] - uvw[1] - uvw[2];
     tuvw_in_tet[1] = uvw[0];
